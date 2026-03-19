@@ -251,7 +251,7 @@ botaoVoltar(abrirExames);
 
 // iniciar
 window.onload = voltarMenu;
-
+ 
 </script>
 
 </head>
