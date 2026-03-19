@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+body{
+font-family: Arial;
+padding:70px 20px 20px 20px;
+}
+
+/* botão voltar */
+#btnVoltar{
+position:fixed;
+top:15px;
+left:15px;
+background:#007bff;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:20px;
+font-size:14px;
+cursor:pointer;
+z-index:1000;
+}
+
+/* menu */
+.menu{
+padding:15px;
+margin:10px 0;
+background:#f0f0f0;
+border-radius:5px;
+cursor:pointer;
+font-size:18px;
+}
+
+/* busca */
+input{
+width:100%;
+padding:10px;
+font-size:16px;
+margin-bottom:20px;
+}
+
+/* lista */
+.exame{
+padding:10px;
+border-bottom:1px solid #ccc;
+cursor:pointer;
+}
+
+/* A-Z */
+#az{
+margin-bottom:15px;
+}
+
+#az span{
+display:inline-block;
+padding:5px 8px;
+margin:3px;
+background:#eee;
+border-radius:5px;
+cursor:pointer;
+font-weight:bold;
+}
+
+#az span:hover{
+background:#007bff;
+color:white;
+}
+
+</style>
+
+<script>
+
+let todosExames = [];
+
+// 🔥 LINK DA SUA PLANILHA
+const URL = "SEU_LINK_CSV_AQUI";
+
+// carregar dados do Sheets
+async function carregarExames(){
+
+let res = await fetch(URL);
+let texto = await res.text();
+
+let linhas = texto.split("\n");
+
+todosExames = linhas.slice(1).map(l => {
+let c = l.split(",");
+
+return {
+mne: c[0],
+sigtap: c[1],
+nome: c[2],
+material: c[3],
+tubo: c[4],
+jejum: c[5],
+volume: c[6],
+prazo: c[7],
+obs: c[8],
+palavraschave: c[9]
+};
+
+});
+
+}
+
+// menu inicial
+function voltarMenu(){
+
+document.body.innerHTML = `
+<h2>Manual de Exames</h2>
+
+<div class="menu" onclick="abrirExames()">Exames</div>
+<div class="menu">Tubos</div>
+<div class="menu">Protocolos</div>
+<div class="menu">SISS Cismetro</div>
+`;
+
+}
+
+// botão flutuante
+function botaoVoltar(func){
+
+let btn = document.createElement("button");
+btn.id="btnVoltar";
+btn.innerHTML="⬅";
+btn.onclick = func;
+
+document.body.appendChild(btn);
+
+}
+
+// abrir exames
+async function abrirExames(){
+
+document.body.innerHTML = `<h2>Carregando...</h2>`;
+botaoVoltar(voltarMenu);
+
+await carregarExames();
+
+document.body.innerHTML = `
+<h2>Exames</h2>
+
+<div id="az"></div>
+
+<input id="busca" onkeyup="pesquisar()" placeholder="Pesquisar exame ou usar A-Z...">
+
+<div id="lista"></div>
+`;
+
+botaoVoltar(voltarMenu);
+
+criarAZ();
+mostrarLista(todosExames);
+
+}
+
+// lista
+function mostrarLista(lista){
+
+let div = document.getElementById("lista");
+div.innerHTML="";
+
+lista.forEach(e=>{
+let item = document.createElement("div");
+item.className="exame";
+item.innerHTML = "<b>"+e.mne+"</b> - "+e.nome;
+item.onclick = ()=>abrirExame(e);
+div.appendChild(item);
+});
+
+}
+
+// busca
+function pesquisar(){
+
+let t = document.getElementById("busca").value.toLowerCase();
+
+if(!t){
+mostrarLista(todosExames);
+return;
+}
+
+let f = todosExames.filter(e =>
+e.nome.toLowerCase().includes(t) ||
+e.mne.toLowerCase().includes(t) ||
+(e.palavraschave && e.palavraschave.toLowerCase().includes(t))
+);
+
+mostrarLista(f);
+
+}
+
+// filtro A-Z
+function filtrarPorLetra(letra){
+
+document.getElementById("busca").value="";
+
+let f = todosExames.filter(e =>
+e.nome.toUpperCase().startsWith(letra)
+);
+
+mostrarLista(f);
+
+}
+
+// criar A-Z
+function criarAZ(){
+
+let letras="ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+let div=document.getElementById("az");
+div.innerHTML="";
+
+let todos=document.createElement("span");
+todos.innerHTML="Todos";
+todos.onclick=()=>mostrarLista(todosExames);
+div.appendChild(todos);
+
+for(let l of letras){
+let b=document.createElement("span");
+b.innerHTML=l;
+b.onclick=()=>filtrarPorLetra(l);
+div.appendChild(b);
+}
+
+}
+
+// abrir exame
+function abrirExame(e){
+
+document.body.innerHTML = `
+<h2>${e.nome}</h2>
+
+<p><b>Mnemônico:</b> ${e.mne}</p>
+<p><b>SIGTAP:</b> ${e.sigtap}</p>
+<p><b>Material:</b> ${e.material}</p>
+<p><b>Tubo:</b> ${e.tubo}</p>
+<p><b>Jejum:</b> ${e.jejum}</p>
+<p><b>Volume:</b> ${e.volume}</p>
+<p><b>Prazo:</b> ${e.prazo}</p>
+<p><b>Obs:</b> ${e.obs}</p>
+`;
+
+botaoVoltar(abrirExames);
+
+}
+
+// iniciar
+window.onload = voltarMenu;
+
+</script>
+
+</head>
+
+<body>
+
+</body>
+
+</html>
